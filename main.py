@@ -10,7 +10,7 @@ from aiogram.fsm.state import State, StatesGroup
 # --- SOZLAMALAR ---
 API_TOKEN = '8762808712:AAHf4E6THer_pl8aeXUl947RsUlXKbGmx7g' 
 ADMIN_ID = 5476312450 
-PROMO_CODE = "APPLE77"
+PROMO_CODE = "1x_4833871"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)

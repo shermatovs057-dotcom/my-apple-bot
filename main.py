@@ -50,7 +50,7 @@ async def cmd_start(message: types.Message):
 async def choose_platform(callback: types.CallbackQuery):
     await callback.answer()
     builder = InlineKeyboardBuilder()
-    for p in ["1XBET", "LINEBET", "MELBET", "MOSTBET"]:
+    for p in ["1XBET", "LINEBET", "MELBET" ]:
         builder.row(types.InlineKeyboardButton(text=p, callback_data=f"verify:{p}"))
     await callback.message.edit_text("❓ Platformani tanlang:", reply_markup=builder.as_markup())
 

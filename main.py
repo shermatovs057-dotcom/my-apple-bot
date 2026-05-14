@@ -14,7 +14,7 @@ API_TOKEN = '8762808712:AAHf4E6THer_pl8aeXUl947RsUlXKbGmx7g'
 ADMIN_ID = 5476312450
 PROMO_CODE = "1x_4833871"
 # O'zingizning Telegram lichkangizni yozing
-MY_LICHKA = "https://t.me/Sizning_Usernamingiz" 
+MY_LICHKA = "https://t.me/ii_rood" 
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)

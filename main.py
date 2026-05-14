@@ -11,10 +11,9 @@ from aiohttp import web
 
 # --- SOZLAMALAR ---
 API_TOKEN = '8762808712:AAHf4E6THer_pl8aeXUl947RsUlXKbGmx7g'
-ADMIN_ID = 5476312450
+ADMIN_ID = 6795100910
 PROMO_CODE = "1x_4833871"
-# O'zingizning Telegram lichkangizni yozing
-MY_LICHKA = "https://t.me/ii_rood" 
+MY_LICHKA = "https://t.me/ii_rood" # Bu yerga o'z usernamesingizni yozing
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
@@ -25,7 +24,7 @@ verified_users = set()
 class RegistrationStates(StatesGroup):
     waiting_for_screenshot = State()
 
-# --- UC NARXLARI VA REKLAMA ---
+# --- UC NARXLARI MATNI ---
 UC_PRICES_TEXT = (
     "💎 **PUBG MOBILE UC NARXLARI** 💎\n"
     "━━━━━━━━━━━━━━━━━━\n"
@@ -42,97 +41,142 @@ UC_PRICES_TEXT = (
 
 AD_TEXT = f"\n\n💎 **ARZON UC KERAKMI?**\n👉 [NARXLARNI KO'RISH](t.me/share/url?url={MY_LICHKA})"
 
-# --- ALGORITM ---
+# --- O'YIN ALGORITMLARI ---
+
+def generate_aviator_grid():
+    # Yutish ehtimoli yuqori bo'lishi uchun past kf-lar
+    chance = random.randint(1, 100)
+    if chance <= 80:
+        coeff = round(random.uniform(1.20, 2.30), 2)
+    else:
+        coeff = round(random.uniform(2.30, 4.50), 2)
+    
+    res = (
+        f"🚀 **AVIATOR PREDICTION** 🚀\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"📈 Kutilayotgan koeffitsient:\n"
+        f"➡️   ✨ **x{coeff}** ✨\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"💡 *Tavsiya: Kamroq kf-da yechib oling!*"
+    )
+    return res + AD_TEXT
+
+def generate_mines_grid():
+    grid = [["▫️" for _ in range(5)] for _ in range(5)]
+    stars_count = random.randint(3, 5)
+    positions = random.sample(range(25), stars_count)
+    
+    for pos in positions:
+        grid[pos // 5][pos % 5] = "⭐"
+        
+    res = "💣 **MINES STRATEGIYA** 💣\n"
+    res += "━━━━━━━━━━━━━━━━━━\n"
+    for row in grid:
+        res += "  " + " ".join(row) + "\n"
+    res += "━━━━━━━━━━━━━━━━━━\n"
+    res += "💎 *Yulduzcha bor kataklarni oching!*"
+    return res + AD_TEXT
+
 def generate_apple_grid():
-    grid = "```\n"
+    grid = "🍎 **APPLE OF FORTUNE** 🍎\n"
+    grid += "━━━━━━━━━━━━━━━━━━\n"
+    grid += "```\n"
     for i in range(10, 0, -1):
         win_pos = random.randint(0, 4)
         cells = ["🍎" if pos == win_pos else "▫️" for pos in range(5)]
         grid += f"{i:02d} | {' '.join(cells)} |\n"
-    grid += "```"
+    grid += "```\n"
+    grid += "━━━━━━━━━━━━━━━━━━\n"
+    grid += "🍏 *Tavsiya: 4-5 qatorgacha ko'tariling!*"
     return grid + AD_TEXT
 
 # --- KLAVIATURALAR ---
-def get_refresh_keyboard(platform):
+
+def main_menu_kb():
     builder = InlineKeyboardBuilder()
-    builder.row(types.InlineKeyboardButton(text="🔄 QAYTA TAHLIL", callback_data=f"verify:{platform}"))
-    builder.row(types.InlineKeyboardButton(text="💎 UC SOTIB OLISH", url=MY_LICHKA))
-    builder.row(types.InlineKeyboardButton(text="🏠 ASOSIY MENYU", callback_data="start_apple"))
+    builder.row(types.InlineKeyboardButton(text="🚀 AVIATOR", callback_data="game:aviator"))
+    builder.row(types.InlineKeyboardButton(text="💣 MINES", callback_data="game:mines"))
+    builder.row(types.InlineKeyboardButton(text="🍎 APPLE OF FORTUNE", callback_data="game:apple"))
+    builder.row(types.InlineKeyboardButton(text="💎 UC NARXLARI", callback_data="show_uc_prices"))
     return builder.as_markup()
 
-def get_uc_buy_keyboard():
+def get_refresh_keyboard(game, platform):
     builder = InlineKeyboardBuilder()
-    builder.row(types.InlineKeyboardButton(text="🛒 SOTIB OLISH (LICHKA)", url=MY_LICHKA))
-    builder.row(types.InlineKeyboardButton(text="⬅️ ORQAGA", callback_data="back_to_start"))
+    builder.row(types.InlineKeyboardButton(text="🔄 QAYTA TAHLIL", callback_data=f"verify:{game}:{platform}"))
+    builder.row(types.InlineKeyboardButton(text="💎 UC SOTIB OLISH", url=MY_LICHKA))
+    builder.row(types.InlineKeyboardButton(text="🏠 ASOSIY MENYU", callback_data="back_to_start"))
     return builder.as_markup()
 
 # --- HANDLERLAR ---
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await show_main_menu(message)
+    await message.answer(f"👋 Salom {message.from_user.first_name}!\nKerakli bo'limni tanlang:", reply_markup=main_menu_kb())
 
 @dp.callback_query(F.data == "back_to_start")
 async def back_to_start(callback: types.CallbackQuery):
-    await callback.message.edit_text(f"👋 Salom {callback.from_user.first_name}!\nAnaliz olish uchun tugmani bosing:", 
-                                     reply_markup=main_menu_kb())
-
-def main_menu_kb():
-    builder = InlineKeyboardBuilder()
-    builder.row(types.InlineKeyboardButton(text="🍎 APPLE OF FORTUNE", callback_data="start_apple"))
-    builder.row(types.InlineKeyboardButton(text="💎 UC NARXLARI", callback_data="show_uc_prices"))
-    return builder.as_markup()
-
-async def show_main_menu(message: types.Message):
-    await message.answer(f"👋 Salom {message.from_user.first_name}!\nKerakli bo'limni tanlang:", reply_markup=main_menu_kb())
+    await callback.message.edit_text("🏠 Asosiy menyu. O'yinni tanlang:", reply_markup=main_menu_kb())
 
 @dp.callback_query(F.data == "show_uc_prices")
 async def show_prices(callback: types.CallbackQuery):
-    await callback.message.edit_text(UC_PRICES_TEXT, reply_markup=get_uc_buy_keyboard(), parse_mode="Markdown")
-
-@dp.callback_query(F.data == "start_apple")
-async def choose_platform(callback: types.CallbackQuery):
     builder = InlineKeyboardBuilder()
-    # MOSTBET o'rniga 888STARZ qo'shildi
+    builder.row(types.InlineKeyboardButton(text="🛒 SOTIB OLISH (LICHKA)", url=MY_LICHKA))
+    builder.row(types.InlineKeyboardButton(text="⬅️ ORQAGA", callback_data="back_to_start"))
+    await callback.message.edit_text(UC_PRICES_TEXT, reply_markup=builder.as_markup(), parse_mode="Markdown")
+
+@dp.callback_query(F.data.startswith("game:"))
+async def choose_platform(callback: types.CallbackQuery):
+    game = callback.data.split(":")[1]
+    builder = InlineKeyboardBuilder()
     platforms = ["1XBET", "LINEBET", "MELBET", "888STARZ"]
     for p in platforms:
-        builder.row(types.InlineKeyboardButton(text=p, callback_data=f"verify:{p}"))
+        builder.row(types.InlineKeyboardButton(text=p, callback_data=f"verify:{game}:{p}"))
     builder.row(types.InlineKeyboardButton(text="⬅️ ORQAGA", callback_data="back_to_start"))
-    await callback.message.edit_text("❓ Platformani tanlang:", reply_markup=builder.as_markup())
+    await callback.message.edit_text(f"🎮 **{game.upper()}** uchun platformani tanlang:", reply_markup=builder.as_markup(), parse_mode="Markdown")
 
 @dp.callback_query(F.data.startswith("verify:"))
 async def check_user(callback: types.CallbackQuery, state: FSMContext):
-    platform = callback.data.split(":")[1]
+    data_parts = callback.data.split(":")
+    game = data_parts[1]
+    platform = data_parts[2]
     
     if callback.from_user.id in verified_users:
-        grid = generate_apple_grid()
+        if game == "aviator": grid = generate_aviator_grid()
+        elif game == "mines": grid = generate_mines_grid()
+        else: grid = generate_apple_grid()
+        
         await callback.message.edit_text(
-            f"✅ **{platform} TAHLILI:**\n{grid}\n\nEslatib o'tamiz yutuqni xohlagan vaqtingizda olishingiz mumkin!", 
+            f"✅ **{platform} {game.upper()} TAHLILI:**\n\n{grid}", 
             parse_mode="Markdown",
-            reply_markup=get_refresh_keyboard(platform)
+            reply_markup=get_refresh_keyboard(game, platform)
         )
     else:
-        msg = (f"📩 **Tekshiruv!**\n\n**{platform}** ID raqamingiz ko'ringan rasm yuboring.\n"
+        msg = (f"📩 **Tekshiruv!**\n\nSiz tanlagan platforma: **{platform}**\n\n"
+               f"ID raqamingiz ko'ringan rasm yuboring.\n"
                f"⚠️ **PROMO-KOD:** `{PROMO_CODE}`\n\n"
                f"💎 **Arzon UC servis:** [NARXLARNI KO'RISH]({MY_LICHKA})")
-        await callback.message.edit_text(msg, parse_mode="Markdown")
-        await state.update_data(plat=platform)
+        await callback.message.edit_text(msg, parse_mode="Markdown", disable_web_page_preview=True)
+        await state.update_data(plat=platform, g=game)
         await state.set_state(RegistrationStates.waiting_for_screenshot)
 
 @dp.message(RegistrationStates.waiting_for_screenshot, F.photo)
 async def handle_screenshot(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    platform = data.get('plat', '1XBET')
+    platform = data.get('plat')
+    game = data.get('g')
     verified_users.add(message.from_user.id)
     
     try:
-        await bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=f"🔔 Yangi rasm: {message.from_user.full_name}\nPlat: {platform}")
+        await bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=f"🔔 Yangi rasm: {message.from_user.full_name}\n🎮 {game} | 🏦 {platform}")
     except: pass
 
-    grid = generate_apple_grid()
-    await message.answer(f"✅ Tasdiqlandi!\n\n🍎 **{platform} ANALIZ:**\n{grid}", 
+    if game == "aviator": grid = generate_aviator_grid()
+    elif game == "mines": grid = generate_mines_grid()
+    else: grid = generate_apple_grid()
+
+    await message.answer(f"✅ Tasdiqlandi!\n\n📊 **{platform} {game.upper()} ANALIZ:**\n\n{grid}", 
                          parse_mode="Markdown", 
-                         reply_markup=get_refresh_keyboard(platform))
+                         reply_markup=get_refresh_keyboard(game, platform))
     await state.clear()
 
 # --- WEB SERVER (Render uchun) ---
